@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector> //vetor de nodos
+#include <fstream> //trabalhar com arquivos; arvore em html; ofstream
 #include <filesystem> //acessar ou manipular arquivos e diretórios // build_node
 namespace fs=std::filesystem; //atalho para nao ter que citar toda vez: std::filesystem...
 
@@ -70,11 +71,11 @@ void show_tree(const node* nodo, const std::string& prefix="", bool ultimo=true)
     std::cout << (ultimo ? "└── " : "├── ");
 
     //nomes e dados:
-    if(nodo->tipo==nodeType::ARQUIVO){
+    if(nodo->tipo==nodeType::ARQUIVO){ //se arquivo, nome e tamanho
         std::cout << nodo->nome << " (" << nodo->tamanho << " bytes)\n";
-    } else{
+    } else{ //se diretorio, nome, tamanho e filhos
         size_t contaFilho = nodo->filhos.size();
-        std:: cout << nodo->nome << " (" << contaFilho << (contaFilho == 1 ? " filho" : " filhos") << ", " << nodo->tamanho << " bytes)\n";
+        std::cout << nodo->nome << " (" << contaFilho << (contaFilho == 1 ? " filho" : " filhos") << ", " << nodo->tamanho << " bytes)\n";
 
         //prefixo filhos
         std::string novoPrefixo = prefix + (ultimo ? "    " : "│   ");
@@ -84,6 +85,42 @@ void show_tree(const node* nodo, const std::string& prefix="", bool ultimo=true)
     }
 }
 
+//exportacao para html:
+void export_tree_recursive(std::ofstream& out, const node* nodo, const std::string& prefix="", bool ultimo=true){//manter a recursividade, indentacao e etc... da arvore
+    out << prefix; //out representa ofstream, para modificar e acessar arquivos.
+    out << (ultimo ? "└── " : "├── ");
+    if(nodo->tipo==nodeType::ARQUIVO){
+        out << nodo->nome << " (" << nodo->tamanho << " bytes)\n";
+    } else{
+        size_t cont = nodo->filhos.size();
+        out << nodo->nome << " (" << cont << (cont==1 ? " filho, " : " filhos, ") << nodo->tamanho << " bytes)\n";
+        std::string novoPrefixo = prefix + (ultimo ? "    " : "│   ");
+        for(size_t i=0;i<cont;i++){
+            export_tree_recursive(out, nodo->filhos[i], novoPrefixo, i==cont-1);   
+        }
 
+    }
+}
+
+void tree_to_html(const node* raiz, const std::string& salvaArquivo="arvore.html"){
+    std::ofstream out(salvaArquivo);//abre o arquivo para escrever nele
+    if(!out){
+        std::cerr << "Erro ao criar arquivo\n";
+        return;
+    }
+    out << "<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"><title>Árvore de Arquivos</title></head>\n<body>\n";
+    out << "<pre>\n";
+
+    //raiz:
+    out << raiz->caminho << " (" << raiz->filhos.size() << (raiz->filhos.size() == 1 ? " filho, " : " filhos, ") << raiz->tamanho << " bytes)\n";
+    for(size_t i=0;i<raiz->filhos.size();i++){
+        export_tree_recursive(out, raiz->filhos[i], "", i==raiz->filhos.size()-1);   
+    }
+    out << "</pre>\n</body>\n</html>\n";
+    out.close();//fecha o arquivo
+
+    std::string comando = "xdg-open " + salvaArquivo + " &";
+    system(comando.c_str());
+}
 
 #endif

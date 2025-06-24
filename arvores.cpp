@@ -13,13 +13,33 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
-    //exibir pasta/diretorio e filhos
-    std::cout << raiz->caminho << " (" << raiz->filhos.size() << (raiz->filhos.size()==1 ? " filho, " : " filhos, ") << raiz->tamanho << " bytes\n";
-    for(size_t i=0;i<raiz->filhos.size();i++){
-        show_tree(raiz->filhos[i], "", i==raiz->filhos.size()-1);
-    }
+    //menu
+    while(true){
+        int opcao;
+        std::cout << "\n        MENU:        \n";
+        std::cout << "1-Exibir árvore\n";
+        std::cout << "2-Exportar árvore para HTML\n";
+        std::cout << "0-SAIR!\n";
+        std::cin >> opcao;
 
-    //ver como exporta pra html
+        switch(opcao){
+            case 1:
+                //exibir arvore - pasta/diretorio e filhos
+                std::cout << raiz->caminho << " (" << raiz->filhos.size() << (raiz->filhos.size()==1 ? " filho, " : " filhos, ") << raiz->tamanho << " bytes\n";
+                for(size_t i=0;i<raiz->filhos.size();i++){
+                    show_tree(raiz->filhos[i], "", i==raiz->filhos.size()-1);
+                }
+                break;
+
+            case 2:
+               tree_to_html(raiz);
+               break;
+            case 0:
+                return 0;
+            default:
+                std::cout << "Opção inválida!\n";   
+        }
+    }
 
     return 0;
 }
