@@ -148,7 +148,7 @@ void show_largest_file(const node* raiz){
     }
 }
 
-//3.2 arquivo maior que N
+//3.2 arquivo maior que N:
 //acha maior arquivo:
 void bigger_than(const node* nodo, size_t limite, std::vector<const node*>& resultado){
     if(!nodo) return;
@@ -168,6 +168,64 @@ void show_bigger_than(const node* raiz){
     std::vector<const node*> resultado;
     bigger_than(raiz, N, resultado);
     std::cout << "Arquivos com mais do que " << N << " bytes (N=" << N << ")\n";
+    for(const auto* arquivo : resultado){
+        std::cout << arquivo->caminho << " (" << arquivo->tamanho << " bytes)\n";
+    }
+}
+
+//3.3 pasta com mais arquivos:
+//acha a pasta com mais arquivos
+void dir_most_files(const node* nodo, size_t& maisArquivos, std::vector<const node*>& resultado){
+    size_t cont=nodo->filhos.size();
+    if(cont > maisArquivos){
+        maisArquivos=cont;
+        resultado.clear();
+        resultado.push_back(nodo);
+    } else if(cont==maisArquivos && cont > 0){
+        resultado.push_back(nodo);
+    }
+    for(const auto& filho : nodo->filhos){
+        dir_most_files(filho, maisArquivos, resultado);
+    }
+}
+
+//exibe a pasta com mais arquivos:
+void show_dir_most_files(const node* raiz){
+    size_t filhosMax=0;
+    std::vector<const node*> resultado;
+    dir_most_files(raiz, filhosMax, resultado);
+    std::cout << "Pasta(s) com mais arquivos (diretos):\n";
+    for (const auto* pasta : resultado) {
+        std::cout << pasta->caminho << " (" << pasta->filhos.size() << (pasta->filhos.size() == 1 ? " filho, " : " filhos, ") << pasta->tamanho << " bytes)\n";
+    }
+}
+
+//3.4 arquivos por extensão
+//verificar se o arquivo possui extensão
+bool extension(const std::string& arquivo, const std::string& ext){
+    if(ext.size() > arquivo.size()) return false;
+    return arquivo.substr(arquivo.size() - ext.size())==ext; //std::substr(), usado para retirar o trecho final do nome do arquivo, para comparar com a extensão que foi solicitada pelo usuario
+}
+
+//agora usando bool extension, comparar os arquivos para mostrar somente os com a extensão que foi solicitada
+void file_extension(const node* nodo, const std::string& ext, std::vector<const node*>& resultado){
+    if(!nodo) return;
+    if(nodo->tipo==nodeType::ARQUIVO && extension(nodo->nome, ext)){
+        resultado.push_back(nodo);
+    }
+    for(const auto& filho : nodo->filhos){
+        file_extension(filho, ext, resultado);
+    }
+}
+
+//mostrar os arquivos com extensao especificada
+void show_by_extension(const node* raiz){
+    std::string ext;
+    std::cout << "Digite a extensão: (ex.: .pdf)\n";
+    std::cin >> ext;
+    std::vector<const node*> resultado;
+    file_extension(raiz, ext, resultado);
+    std::cout << "Arquivos por extensão (" << ext << "):\n";
     for(const auto* arquivo : resultado){
         std::cout << arquivo->caminho << " (" << arquivo->tamanho << " bytes)\n";
     }

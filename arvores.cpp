@@ -57,7 +57,11 @@ int main(int argc, char* argv[]){
                             show_bigger_than(raiz);
                             break;
                         case 3:
+                            show_dir_most_files(raiz);
+                            break;
                         case 4:
+                            show_by_extension(raiz);
+                            break;
                         case 5:
                         default:
                             std::cout << "Opção inválida!\n";
