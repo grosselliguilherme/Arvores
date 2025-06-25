@@ -2,7 +2,7 @@
 #define THREE_HPP
 
 #include <string>
-#include <vector> //vetor de nodos
+#include <vector> //vetor para armazenar os nodos ao longo das funcoes propostas
 #include <fstream> //trabalhar com arquivos; arvore em html; ofstream
 #include <filesystem> //acessar ou manipular arquivos e diretórios // build_node
 namespace fs=std::filesystem; //atalho para nao ter que citar toda vez: std::filesystem...
@@ -14,11 +14,11 @@ enum class nodeType{    //usar enum para manter seguranca, e para sinalizar que 
 };
 
 struct node{
-    std::string nome; 
-    std::string caminho;
-    nodeType tipo;
+    std::string nome; //nomde do arquivo
+    std::string caminho; //caminho do arquivo
+    nodeType tipo; //se arquivo ou pasta
     size_t tamanho=0; //size_t inteiro sem sinal, usa pra representar contagens (ja q nao pode ser valor negativo)
-    std::vector<node*> filhos;
+    std::vector<node*> filhos; //vetor de ponteiros para o(s) filho(s)
 };
 
 //novo nodo
@@ -31,18 +31,19 @@ node* create_node(const std::string& nome, const std::string& caminho, nodeType 
     return nodo;
 }
 
+//construao basica da arvore:
 node* build_tree(const fs::path& caminho){
-    if(!fs::exists(caminho) || fs::is_symlink(caminho)){ //se caminho invalido ou link, retorna
+    if(!fs::exists(caminho) || fs::is_symlink(caminho)){ //se caminho invalido ou link, retorna null
         return nullptr;
     }
     std::string nome=caminho.filename().string(); 
-    std::string caminTotal=fs::absolute(caminho).string();
+    std::string caminTotal=fs::absolute(caminho).string(); //após essas duas analises, retorna o caminho absoluto do diretorio informado
     //se é um arquivo:
     if(fs::is_regular_file(caminho)){
         size_t tamanho=fs::file_size(caminho);
         return create_node(nome, caminTotal, nodeType::ARQUIVO, tamanho);
     }
-    //se é um diretorio
+    //se é uma pasta
     if(fs::is_directory(caminho)){
         node* dir=create_node(nome, caminTotal, nodeType::DIRETORIO, 0);
         //começar a recursão para acessar arquivos e pastas e montar a arvore do diretorio
@@ -53,13 +54,13 @@ node* build_tree(const fs::path& caminho){
                 dir->tamanho+=filho->tamanho; //soma os tamanhs dos filhos
             }
         }
-        return dir;
+        return dir; //após percorrer tudo, retorna o diretorio montado
     }
-    return nullptr;
+    return nullptr; //caso nem arquivo, nem pasta
 }
 
 //item 1 - estrutura da arvore:
-//funcao de exibir a arvore
+//funcao de exibir a arvore:
 void show_tree(const node* nodo, const std::string& prefix="", bool ultimo=true){
     if(!nodo) return;
     std::cout << prefix; //prefix usado aqui nas indentações
@@ -72,18 +73,18 @@ void show_tree(const node* nodo, const std::string& prefix="", bool ultimo=true)
         size_t contaFilho = nodo->filhos.size();
         std::cout << nodo->nome << " (" << contaFilho << (contaFilho == 1 ? " filho" : " filhos") << ", " << nodo->tamanho << " bytes)\n";
         //prefixo filhos
-        std::string novoPrefixo = prefix + (ultimo ? "    " : "│   ");
+        std::string novoPrefixo = prefix + (ultimo ? "    " : "│   "); //ir mantendo indentação padrão ao adicionar filhos
         for(size_t i=0;i<contaFilho;i++){
             show_tree(nodo->filhos[i], novoPrefixo, i==contaFilho-1);   
         }
     }
-}
+}//monta a arvore em formato preorder, mas a construção interna é feita em postorder    
 
 //item 2 - exportacao para html:
 //monta arvore:
 void export_tree_recursive(std::ofstream& out, const node* nodo, const std::string& prefix="", bool ultimo=true){//manter a recursividade, indentacao e etc... da arvore
     out << prefix; //out representa ofstream, para modificar e acessar arquivos.
-    out << (ultimo ? "└── " : "├── ");
+    out << (ultimo ? "└── " : "├── "); //analisa o ultimo filho acessado para saber qual ligação informar
     if(nodo->tipo==nodeType::ARQUIVO){
         out << nodo->nome << " (" << nodo->tamanho << " bytes)\n";
     } else{
@@ -114,7 +115,7 @@ void tree_to_html(const node* raiz, const std::string& salvaArquivo="arvore.html
     }
     out << "</pre>\n</body>\n</html>\n";
     out.close();//fecha o arquivo
-    std::string comando = "xdg-open " + salvaArquivo + " &";
+    std::string comando = "xdg-open " + salvaArquivo + " &"; //comando para abrir o arquivo html no navegador e mostrar a arvore estruturada
     system(comando.c_str());
 }
 
@@ -229,6 +230,10 @@ void show_by_extension(const node* raiz){
     for(const auto* arquivo : resultado){
         std::cout << arquivo->caminho << " (" << arquivo->tamanho << " bytes)\n";
     }
+    //caso não tiver, responde com:
+    if(resultado.empty()){
+        std::cout << "Nenhum arquivo com essa extensão.\n";
+    }
 }
 
 //3.5 Pastas vazias:
@@ -250,6 +255,10 @@ void show_empty(const node* raiz){
     std::cout << "Pastas vazias:\n";
     for(const auto* p : resultado){
         std::cout << p->caminho << "\n";
+    }
+    //caso não tiver, responde com:
+    if(resultado.empty()){
+        std::cout << "Nenhuma pasta vazia encontrada.\n";
     }
 }
 

@@ -1,6 +1,5 @@
-#include <iostream>
+#include <iostream> //std::cout, cin e cerr
 #include "tree.hpp"
-//#include "filesystem_tree.hpp"
 #include <filesystem>
 namespace fs = std::filesystem;
 
