@@ -63,6 +63,8 @@ int main(int argc, char* argv[]){
                             show_by_extension(raiz);
                             break;
                         case 5:
+                            show_empty(raiz);
+                            break;
                         default:
                             std::cout << "Opção inválida!\n";
                     }

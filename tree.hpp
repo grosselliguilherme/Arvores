@@ -200,14 +200,14 @@ void show_dir_most_files(const node* raiz){
     }
 }
 
-//3.4 arquivos por extensão
-//verificar se o arquivo possui extensão
+//3.4 arquivos por extensão:
+//verificar se o arquivo possui extensão:
 bool extension(const std::string& arquivo, const std::string& ext){
     if(ext.size() > arquivo.size()) return false;
     return arquivo.substr(arquivo.size() - ext.size())==ext; //std::substr(), usado para retirar o trecho final do nome do arquivo, para comparar com a extensão que foi solicitada pelo usuario
 }
 
-//agora usando bool extension, comparar os arquivos para mostrar somente os com a extensão que foi solicitada
+//agora usando bool extension, comparar os arquivos para mostrar somente os com a extensão que foi solicitada:
 void file_extension(const node* nodo, const std::string& ext, std::vector<const node*>& resultado){
     if(!nodo) return;
     if(nodo->tipo==nodeType::ARQUIVO && extension(nodo->nome, ext)){
@@ -218,7 +218,7 @@ void file_extension(const node* nodo, const std::string& ext, std::vector<const 
     }
 }
 
-//mostrar os arquivos com extensao especificada
+//mostrar os arquivos com extensao especificada:
 void show_by_extension(const node* raiz){
     std::string ext;
     std::cout << "Digite a extensão: (ex.: .pdf)\n";
@@ -228,6 +228,28 @@ void show_by_extension(const node* raiz){
     std::cout << "Arquivos por extensão (" << ext << "):\n";
     for(const auto* arquivo : resultado){
         std::cout << arquivo->caminho << " (" << arquivo->tamanho << " bytes)\n";
+    }
+}
+
+//3.5 Pastas vazias:
+//encontrar a pastas vazias:
+void empty(const node* nodo, std::vector<const node*>& resultado){
+    if(!nodo || nodo->tipo!=nodeType::DIRETORIO) return;
+    if(nodo->filhos.empty()){
+        resultado.push_back(nodo);
+    }
+    for(const auto& filho : nodo->filhos){
+        empty(filho, resultado);
+    }
+}
+
+//mostrar pastas vazias:
+void show_empty(const node* raiz){
+    std::vector<const node*> resultado;
+    empty(raiz, resultado);
+    std::cout << "Pastas vazias:\n";
+    for(const auto* p : resultado){
+        std::cout << p->caminho << "\n";
     }
 }
 
