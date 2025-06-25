@@ -35,16 +35,13 @@ node* build_tree(const fs::path& caminho){
     if(!fs::exists(caminho) || fs::is_symlink(caminho)){ //se caminho invalido ou link, retorna
         return nullptr;
     }
-
     std::string nome=caminho.filename().string(); 
     std::string caminTotal=fs::absolute(caminho).string();
-
     //se é um arquivo:
     if(fs::is_regular_file(caminho)){
         size_t tamanho=fs::file_size(caminho);
         return create_node(nome, caminTotal, nodeType::ARQUIVO, tamanho);
     }
-
     //se é um diretorio
     if(fs::is_directory(caminho)){
         node* dir=create_node(nome, caminTotal, nodeType::DIRETORIO, 0);
@@ -61,22 +58,19 @@ node* build_tree(const fs::path& caminho){
     return nullptr;
 }
 
+//item 1 - estrutura da arvore:
 //funcao de exibir a arvore
 void show_tree(const node* nodo, const std::string& prefix="", bool ultimo=true){
     if(!nodo) return;
-
     std::cout << prefix; //prefix usado aqui nas indentações
-
     //conectores
     std::cout << (ultimo ? "└── " : "├── ");
-
     //nomes e dados:
     if(nodo->tipo==nodeType::ARQUIVO){ //se arquivo, nome e tamanho
         std::cout << nodo->nome << " (" << nodo->tamanho << " bytes)\n";
     } else{ //se diretorio, nome, tamanho e filhos
         size_t contaFilho = nodo->filhos.size();
         std::cout << nodo->nome << " (" << contaFilho << (contaFilho == 1 ? " filho" : " filhos") << ", " << nodo->tamanho << " bytes)\n";
-
         //prefixo filhos
         std::string novoPrefixo = prefix + (ultimo ? "    " : "│   ");
         for(size_t i=0;i<contaFilho;i++){
@@ -85,7 +79,8 @@ void show_tree(const node* nodo, const std::string& prefix="", bool ultimo=true)
     }
 }
 
-//exportacao para html:
+//item 2 - exportacao para html:
+//monta arvore:
 void export_tree_recursive(std::ofstream& out, const node* nodo, const std::string& prefix="", bool ultimo=true){//manter a recursividade, indentacao e etc... da arvore
     out << prefix; //out representa ofstream, para modificar e acessar arquivos.
     out << (ultimo ? "└── " : "├── ");
@@ -102,6 +97,7 @@ void export_tree_recursive(std::ofstream& out, const node* nodo, const std::stri
     }
 }
 
+//transforma em arquivo:
 void tree_to_html(const node* raiz, const std::string& salvaArquivo="arvore.html"){
     std::ofstream out(salvaArquivo);//abre o arquivo para escrever nele
     if(!out){
@@ -111,16 +107,70 @@ void tree_to_html(const node* raiz, const std::string& salvaArquivo="arvore.html
     out << "<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"><title>Árvore de Arquivos</title></head>\n<body>\n";
     out << "<pre>\n";
 
-    //raiz:
+    //arvore:
     out << raiz->caminho << " (" << raiz->filhos.size() << (raiz->filhos.size() == 1 ? " filho, " : " filhos, ") << raiz->tamanho << " bytes)\n";
     for(size_t i=0;i<raiz->filhos.size();i++){
         export_tree_recursive(out, raiz->filhos[i], "", i==raiz->filhos.size()-1);   
     }
     out << "</pre>\n</body>\n</html>\n";
     out.close();//fecha o arquivo
-
     std::string comando = "xdg-open " + salvaArquivo + " &";
     system(comando.c_str());
+}
+
+//item 3 - pesquisas:
+//3.1 - maior arquivo:
+//encontrar o maior arquivo:
+void largest_file(const node* nodo, size_t& max, std::vector<const node*>& maior){
+    if(!nodo) return;
+    if(nodo->tipo==nodeType::ARQUIVO){
+        if(nodo->tamanho > max){
+            max=nodo->tamanho;
+            maior.clear();
+            maior.push_back(nodo);
+        } else if(nodo->tamanho==max){
+            maior.push_back(nodo);
+        }
+    }
+    for(const auto& filho : nodo->filhos){
+        largest_file(filho, max, maior);
+    }
+}
+
+//mostrar o maior arquivo:
+void show_largest_file(const node* raiz){
+    size_t max=0;
+    std::vector<const node*> maior;
+    largest_file(raiz, max, maior);
+    std::cout << "Maior(es) arquivo(s):\n";
+    for(const auto* arquivo : maior){
+        std::cout << arquivo->caminho  << " (" << arquivo->tamanho << " bytes)\n";
+    }
+}
+
+//3.2 arquivo maior que N
+//acha maior arquivo:
+void bigger_than(const node* nodo, size_t limite, std::vector<const node*>& resultado){
+    if(!nodo) return;
+    if(nodo->tipo==nodeType::ARQUIVO && nodo->tamanho > limite){
+        resultado.push_back(nodo);
+    }
+    for(const auto& filho : nodo->filhos){
+        bigger_than(filho, limite, resultado);
+    }
+}
+
+//mostra maior arquivo:
+void show_bigger_than(const node* raiz){
+    size_t N;
+    std::cout << "Digite um valor N (tamanho mínimo de bytes):\n";
+    std::cin >> N;
+    std::vector<const node*> resultado;
+    bigger_than(raiz, N, resultado);
+    std::cout << "Arquivos com mais do que " << N << " bytes (N=" << N << ")\n";
+    for(const auto* arquivo : resultado){
+        std::cout << arquivo->caminho << " (" << arquivo->tamanho << " bytes)\n";
+    }
 }
 
 #endif
